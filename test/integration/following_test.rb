@@ -74,3 +74,38 @@ class UnfollowTest < Unfollow
     end
   end
 end
+
+class FeedTest < ActionDispatch::IntegrationTest
+
+  def setup
+    @user =     users(:michael)
+    @ff =       users(:lana) # 相互フォロワー
+    @follower = users(:malory) # フォローされているがフォローしていない
+    @followed = users(:archer) # フォローしているがフォローされていない
+    log_in_as(@user)
+  end
+
+  test "home page feed displays appropriate post" do
+    get root_url
+
+    # 自分自身のポストが表示されている
+    @user.microposts.paginate(page: 1) do |post|
+      assert_match post.content, response.body
+    end
+
+    # フォローしたユーザーのポストが表示されている
+    @ff.microposts.paginate(page: 1) do |post|
+      assert_match post.content, response.body
+    end
+    
+    @followed.microposts.paginate(page: 1) do |post|
+      assert_match post.content, response.body
+    end
+    
+    # フォローしていないユーザーのポストが表示されていない（フォローされているユーザー）
+    @follower.microposts.paginate(page: 1) do |post|
+      assert_no_match post.content, response.body
+    end
+  end
+
+end
